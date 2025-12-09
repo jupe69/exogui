@@ -45,6 +45,8 @@ type MainState = {
     isQuitting: boolean;
     /** Path of the folder containing the config and preferences files. */
     mainFolderPath: string;
+    /** If @electron/remote has been initialized. */
+    remoteInitialized: boolean;
 };
 
 export function main(init: Init): void {
@@ -62,6 +64,7 @@ export function main(init: Init): void {
         _sentLocaleCode: false,
         isQuitting: false,
         mainFolderPath: createErrorProxy("mainFolderPath"),
+        remoteInitialized: false,
     };
 
     startup();
@@ -295,7 +298,10 @@ export function main(init: Init): void {
         // Create the browser window.
         const mw = getInitialWindowSize();
 
-        remoteMain.initialize();
+        if (!state.remoteInitialized) {
+            remoteMain.initialize();
+            state.remoteInitialized = true;
+        }
         const window = new BrowserWindow({
             title: APP_TITLE,
             x: mw.x,
