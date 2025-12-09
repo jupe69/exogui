@@ -207,7 +207,12 @@ async function initialize(message: any, _: any): Promise<void> {
     await ConfigFile.readOrCreateFile(
         path.join(state.configFolder, configFilename)
     );
-    if (!path.isAbsolute(state.config.exodosPath)) {
+    // If EXODOS_PATH env var is set, use it directly as the eXoDOS path
+    // This overrides the config.json value entirely
+    if (process.env.EXODOS_PATH) {
+        state.config.exodosPath = process.env.EXODOS_PATH;
+        console.log("Using EXODOS_PATH environment variable: " + state.config.exodosPath);
+    } else if (!path.isAbsolute(state.config.exodosPath)) {
         state.config.exodosPath = path.join(
             state.basePath,
             state.config.exodosPath
