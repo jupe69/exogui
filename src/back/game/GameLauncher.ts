@@ -181,29 +181,19 @@ export namespace GameLauncher {
      * For full eXoDOS: Run the install script
      */
     export async function launchGameSetup(opts: LaunchGameOpts): Promise<void> {
-        console.log(`[DEBUG] launchGameSetup called for game: ${opts.game?.title}`);
-        console.log(`[DEBUG] fpPath: ${opts.fpPath}`);
-        console.log(`[DEBUG] applicationPath: ${opts.game?.applicationPath}`);
         // Get the game's directory path from applicationPath
         // e.g., "eXo\eXoDOS\!dos\DOOM\DOOM.bat" -> "eXo/eXoDOS/!dos/DOOM"
         const appPath = fixSlashes(opts.game.applicationPath);
         const gameDir = path.dirname(appPath);
         const fullGameDir = path.join(opts.fpPath, gameDir);
-        console.log(`[DEBUG] appPath: ${appPath}`);
-        console.log(`[DEBUG] gameDir: ${gameDir}`);
-        console.log(`[DEBUG] fullGameDir: ${fullGameDir}`);
-        console.log(`[DEBUG] fullGameDir exists: ${fs.existsSync(fullGameDir)}`);
 
         // Check if game folder exists
         if (!fs.existsSync(fullGameDir)) {
-            console.log(`[DEBUG] Game folder not found, trying ZIP extraction...`);
             log(logSource, `Game folder not found: ${fullGameDir}`);
 
             // Try to find and extract ZIP file (eXoDOS Lite)
             const extracted = await tryExtractGameZip(opts.fpPath, opts.game, opts.openDialog);
-            console.log(`[DEBUG] ZIP extraction result: ${extracted}`);
             if (!extracted) {
-                console.log(`[DEBUG] Showing 'Game Not Installed' dialog`);
                 opts.openDialog({
                     type: "info",
                     title: "Game Not Installed",
@@ -212,30 +202,23 @@ export namespace GameLauncher {
                 });
                 return;
             }
-        } else {
-            console.log(`[DEBUG] Game folder exists, proceeding to install script`);
         }
 
         // Launch game setup/install script if it exists
         const installScript = process.platform === "win32" ? "install.bat" : "install.bsh";
-        console.log(`[DEBUG] Looking for install script: ${installScript}`);
         const setupPath = opts.game.applicationPath.replace(
             getFilename(opts.game.applicationPath),
             installScript
         );
-        console.log(`[DEBUG] setupPath: ${setupPath}`);
         const gamePath: string = fixSlashes(
             path.join(
                 opts.fpPath,
                 getApplicationPath(setupPath, opts.execMappings, opts.native)
             )
         );
-        console.log(`[DEBUG] gamePath (install script): ${gamePath}`);
-        console.log(`[DEBUG] install script exists: ${fs.existsSync(gamePath)}`);
 
         // Check if install script exists
         if (!fs.existsSync(gamePath)) {
-            console.log(`[DEBUG] Install script not found, showing 'Game Extracted' dialog`);
             log(logSource, `Install script not found: ${gamePath}`);
             opts.openDialog({
                 type: "info",
@@ -245,7 +228,6 @@ export namespace GameLauncher {
             });
             return;
         }
-        console.log(`[DEBUG] Install script found, launching...`);
 
         // On macOS, the .bsh scripts source .msh files which may be in the shared util folder
         // Copy the required .msh file to the game directory if it doesn't exist
@@ -255,19 +237,16 @@ export namespace GameLauncher {
             const sharedMshFile = path.join(opts.fpPath, "eXo", "util", "install.msh");
 
             if (!fs.existsSync(mshFile) && fs.existsSync(sharedMshFile)) {
-                console.log(`[DEBUG] Copying shared install.msh to game directory`);
                 try {
                     fs.copyFileSync(sharedMshFile, mshFile);
-                    console.log(`[DEBUG] Copied ${sharedMshFile} to ${mshFile}`);
+                    log(logSource, `Copied shared install.msh to ${gameDirectory}`);
                 } catch (e) {
-                    console.log(`[DEBUG] Failed to copy install.msh: ${e}`);
+                    log(logSource, `Failed to copy install.msh: ${e}`);
                 }
             }
         }
 
         const gameArgs: string = opts.game.launchCommand;
-        console.log(`[DEBUG] gameArgs: ${gameArgs}`);
-
         let command;
         try {
             command = createCommand(
@@ -275,25 +254,12 @@ export namespace GameLauncher {
                 gameArgs,
                 opts.mappings
             );
-            console.log(`[DEBUG] Command created: ${command.command}`);
-            console.log(`[DEBUG] Command cwd: ${command.cwd}`);
         } catch (e) {
-            console.log(`[DEBUG] Error creating command: ${e}`);
+            log(logSource, `Error creating command: ${e}`);
             return;
         }
 
-        console.log(`[DEBUG] Executing command...`);
         const proc = exec(command.command, { cwd: command.cwd });
-        console.log(`[DEBUG] Process started with PID: ${proc.pid}`);
-
-        proc.on('error', (err) => {
-            console.log(`[DEBUG] Process error: ${err}`);
-        });
-
-        proc.on('exit', (code) => {
-            console.log(`[DEBUG] Process exited with code: ${code}`);
-        });
-
         logProcessOutput(proc);
         log(logSource, `Launch Game Setup "${opts.game.title}" (PID: ${proc.pid}) [\n` +
             `    applicationPath: "${opts.game.applicationPath}",\n` +

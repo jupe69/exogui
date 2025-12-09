@@ -368,12 +368,9 @@ class BrowsePage extends React.Component<
     }, 500);
 
     onGameLaunchSetup = throttle((gameId: string): void => {
-        console.log(`[DEBUG] onGameLaunchSetup called with gameId: ${gameId}`);
         const game = this.props.games.find((g) => g.id === gameId);
         const addApps = this.props.addApps.filter((a) => a.gameId === gameId);
-        console.log(`[DEBUG] game found: ${game ? game.title : 'NOT FOUND'}`);
         if (game) {
-            console.log(`[DEBUG] Sending BackIn.LAUNCH_GAME_SETUP`);
             window.External.back.send(BackIn.LAUNCH_GAME_SETUP, game, addApps);
         }
     }, 500);
