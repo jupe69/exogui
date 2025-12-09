@@ -153,7 +153,10 @@ export class RightBrowseSidebar extends React.Component<
                                         className="simple-button"
                                         value={playButtonLabel}
                                         onClick={() =>
-                                            this.props.onGameLaunch(game.id)
+                                            // If game is not installed, run setup/install instead of launch
+                                            currentGame?.installed
+                                                ? this.props.onGameLaunch(game.id)
+                                                : this.props.onGameLaunchSetup(game.id)
                                         }
                                     />
                                     {isGame ? (
