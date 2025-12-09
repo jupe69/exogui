@@ -181,6 +181,9 @@ export namespace GameLauncher {
      * For full eXoDOS: Run the install script
      */
     export async function launchGameSetup(opts: LaunchGameOpts): Promise<void> {
+        console.log(`[DEBUG] launchGameSetup called for game: ${opts.game?.title}`);
+        console.log(`[DEBUG] fpPath: ${opts.fpPath}`);
+        console.log(`[DEBUG] applicationPath: ${opts.game?.applicationPath}`);
         // Get the game's directory path from applicationPath
         // e.g., "eXo\eXoDOS\!dos\DOOM\DOOM.bat" -> "eXo/eXoDOS/!dos/DOOM"
         const appPath = fixSlashes(opts.game.applicationPath);

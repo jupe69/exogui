@@ -103,6 +103,7 @@ export function registerRequestCallbacks(state: BackState): void {
     });
 
     state.socketServer.register(BackIn.LAUNCH_GAME_SETUP, async (event, game, addApps) => {
+        console.log(`[DEBUG] LAUNCH_GAME_SETUP received for game: ${game?.title}`);
         GameLauncher.launchGameSetup({
             game,
             addApps,
