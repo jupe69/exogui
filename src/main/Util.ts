@@ -37,13 +37,11 @@ export const isDev: boolean = (function () {
 
 /**
  * Get the path of the folder containing the config and preferences files.
- * @param installed If the application is installed (instead of portable).
+ * Note: This is separate from EXODOS_PATH which controls game data location.
+ * Config files (config.json, preferences.json, mappings.json) are always
+ * read from the app's directory, not the eXoDOS data directory.
  */
 export function getMainFolderPath(): string {
-    // Allow override via EXODOS_PATH environment variable
-    if (process.env.EXODOS_PATH) {
-        return process.env.EXODOS_PATH;
-    }
     // For packaged apps (AppImage on Linux, .app on macOS), use userData directory
     // For portable/dev mode, use current working directory
     if (process.env.APPIMAGE || (process.platform === "darwin" && !isDev)) {
