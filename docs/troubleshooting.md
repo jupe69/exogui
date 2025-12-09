@@ -144,15 +144,103 @@ For more details on configuration, see [config.md](config.md).
 
 ## macOS-Specific Issues
 
-**Note:** macOS support is currently under development and may not work correctly.
+### Prerequisites for macOS
 
-**Known Issues:**
+Before running exogui on macOS, ensure you have the following installed:
 
--   Application may not launch properly
--   Some features may be incomplete or non-functional
+1. **VLC Media Player** (optional, for background music):
+   - Download from [videolan.org](https://www.videolan.org/vlc/) or install via Homebrew:
+     ```bash
+     brew install vlc
+     ```
 
-**Status:**
-Check the [exogui discord](https://discord.gg/srHzx9HS) for the latest macOS development updates.
+2. **Wine** (required for running Windows executables like foobar2000):
+   - Install via Homebrew:
+     ```bash
+     brew install wine-stable
+     ```
+   - Or use [CrossOver](https://www.codeweavers.com/crossover) for a more user-friendly experience
+
+3. **DOSBox** (if using native DOSBox instead of bundled):
+   - Download from [dosbox.com](https://www.dosbox.com/download.php?main=1)
+   - Or install via Homebrew:
+     ```bash
+     brew install dosbox
+     ```
+
+### VLC Not Working
+
+**Problem:** Music doesn't play when browsing games.
+
+**Solutions:**
+
+1. **Check VLC is installed** in one of these locations:
+   - `/Applications/VLC.app/Contents/MacOS/VLC`
+   - `/opt/homebrew/bin/vlc` (Homebrew on Apple Silicon)
+   - `/usr/local/bin/vlc` (Homebrew on Intel)
+
+2. **Verify VLC is accessible:**
+   ```bash
+   vlc --version
+   ```
+
+3. **Check console output** for VLC initialization messages when starting exogui
+
+### File Associations Not Working
+
+**Problem:** Documents, videos, or other files don't open.
+
+**Solution:** The default macOS mappings use native apps like Preview, Safari, and TextEdit. If you have custom applications installed (like IINA for video), you can modify `mappings.json`. See [mappings.md](mappings.md) for details.
+
+### App Not Opening (Gatekeeper)
+
+**Problem:** macOS shows "exogui is damaged and can't be opened" or similar.
+
+**Solutions:**
+
+1. **Remove quarantine attribute:**
+   ```bash
+   xattr -cr /Applications/exogui.app
+   ```
+
+2. **Allow in System Settings:**
+   - Go to System Settings → Privacy & Security
+   - Click "Open Anyway" for exogui
+
+### Building from Source on macOS
+
+1. **Install Xcode Command Line Tools:**
+   ```bash
+   xcode-select --install
+   ```
+
+2. **Install Node.js:**
+   ```bash
+   brew install node
+   ```
+
+3. **Clone and build:**
+   ```bash
+   git clone --recurse-submodules https://github.com/exogui/exogui
+   cd exogui
+   npm install
+   npm run build
+   npm run start
+   ```
+
+### Packaging for macOS
+
+**For Intel Macs:**
+```bash
+npm run release:darwin
+```
+
+**For Apple Silicon (M1/M2/M3):**
+```bash
+npm run release:m1
+```
+
+The packaged app will be in `./dist/` as a `.dmg` file.
 
 ---
 

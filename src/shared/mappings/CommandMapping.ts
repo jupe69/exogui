@@ -1,4 +1,4 @@
-import { IAppCommandsMappingData, ICommandMapping } from "./interfaces";
+import { IAppCommandsMappingData, ICommandMapping, getPlatformCommand } from "./interfaces";
 import { escapeShell } from "../Util";
 import path = require("path");
 
@@ -48,27 +48,47 @@ export const createCommand = (
     .endsWith(FOOBAR_EXECUTABLE);
     if (isSoundtrack) return createSoundtrackCommand(escFilename, args);
 
-    const { command, includeArgs, includeFilename } = getCommandMapping(
-        filename,
-        mappings
-    );
+    const mapping = getCommandMapping(filename, mappings);
+    const command = getPlatformCommand(mapping.command);
+
+    if (!command && command !== "") {
+        throw new Error(`No command mapping found for platform ${process.platform}`);
+    }
+
     return {
-        command: `${command} ${includeFilename ? escFilename : ""} ${includeArgs ? escArgs : ""}`.trim()
+        command: `${command} ${mapping.includeFilename ? escFilename : ""} ${mapping.includeArgs ? escArgs : ""}`.trim()
     };
 };
 
 const createSoundtrackCommand = (escFilename: string, args: string): Command => {
     const foobarDirectory = escFilename.slice(0, -FOOBAR_EXECUTABLE.length);
+
+    // Platform-specific Wine command for foobar2000
+    let wineCommand: string;
+    switch (process.platform) {
+        case "linux":
+            wineCommand = `flatpak run com.retro_exo.wine ${FOOBAR_EXECUTABLE} ${args}`;
+            break;
+        case "darwin":
+            // On macOS, try Wine from Homebrew or user-installed Wine
+            wineCommand = `wine ${FOOBAR_EXECUTABLE} ${args}`;
+            break;
+        default:
+            // On Windows, run the exe directly
+            wineCommand = `${FOOBAR_EXECUTABLE} ${args}`;
+            break;
+    }
+
     return {
         cwd: foobarDirectory,
-        command: `flatpak run com.retro_exo.wine ${FOOBAR_EXECUTABLE} ${args}`
+        command: wineCommand
     };
 };
 
 const getCommandMapping = (
     filename: string,
     mappings: IAppCommandsMappingData
-) => {
+): ICommandMapping => {
     const extension = filename.split(".").pop();
     if (!extension) throw "Invalid file without extension.";
 

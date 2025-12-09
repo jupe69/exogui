@@ -27,9 +27,9 @@ More eXo projects coming in the future!
 -   Browse and search through the entire eXo game collections
 -   Launch DOS and Windows games with platform-specific configurations
 -   Manage playlists and favorites
--   Cross-platform support (Windows, Linux)
--   macOS support is currently under development
+-   Cross-platform support (Windows, Linux, macOS)
 -   Integration with game metadata, screenshots, and videos
+-   Background music playback via VLC
 
 If you encounter any issues with exogui, seek help on the [exogui discord](https://discord.gg/srHzx9HS) server. For general eXoDOS support and Linux setup, visit the [eXoDOS Discord](https://www.retro-exo.com/community.html) server.
 
@@ -86,8 +86,8 @@ npm run start
 
 -   `npm run pack:linux` - Package for Linux (x64)
 -   `npm run pack:win32` - Package for Windows (ia32)
--   `npm run pack:darwin` - Package for macOS (Intel) - _under development_
--   `npm run pack:m1` - Package for macOS (Apple Silicon) - _under development_
+-   `npm run pack:darwin` - Package for macOS (Intel x64)
+-   `npm run pack:m1` - Package for macOS (Apple Silicon arm64)
 -   `npm run pack:all` - Package for all platforms
 
 Use `release:*` variants (e.g., `npm run release:linux`) to build and package in production mode.

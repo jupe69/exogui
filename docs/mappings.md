@@ -73,14 +73,23 @@ Each command mapping object has the following structure:
 
 ### `command`
 
--   **Type:** `string`
+-   **Type:** `string` or `object`
 -   **Required:** Yes
--   **Description:** The shell command to execute to open the file
--   **Example:** `"flatpak run com.retro_exo.okular"`
+-   **Description:** The shell command to execute to open the file. Can be a simple string for all platforms, or an object with platform-specific commands.
+-   **Simple Example:** `"flatpak run com.retro_exo.okular"`
+-   **Platform-Specific Example:**
+    ```json
+    {
+        "linux": "flatpak run com.retro_exo.okular",
+        "darwin": "open -a 'Preview'",
+        "win32": "start"
+    }
+    ```
 -   **Notes:**
     -   Can be a full path or command name
     -   Can include command-line arguments
     -   Empty string `""` for `.command` files means execute the file directly
+    -   When using platform-specific commands, if `darwin` is not specified, it falls back to `linux`
 
 ### `includeFilename`
 
@@ -196,9 +205,13 @@ The default `mappings.json` includes mappings for:
 
 ## Platform-Specific Behavior
 
+The `mappings.json` file now supports platform-specific commands. Each mapping can specify different commands for Windows, Linux, and macOS.
+
 ### Windows
 
 On Windows, the command mapping system uses the `start` command to open files with their associated applications. The mappings are generally less critical on Windows since file associations are handled by the OS.
+
+**Default fallback:** `start` (system default application)
 
 ### Linux
 
@@ -208,4 +221,41 @@ On Linux, command mappings are essential because there's no universal file assoc
 
 ### macOS
 
-On macOS (when supported), the `open` command can be used as the default mapping.
+On macOS, the `open` command is used to open files with their default applications. The `-a` flag can specify a particular application.
+
+**Default fallback:** `open` (system default application)
+
+**Example macOS commands:**
+- `open` - Open with default app
+- `open -a 'Preview'` - Open with Preview
+- `open -a 'Safari'` - Open with Safari
+- `open -a 'IINA'` - Open with IINA (if installed)
+
+## Example: Platform-Specific Configuration
+
+Here's an example of a mapping that uses different applications on each platform:
+
+```json
+{
+    "extensions": ["pdf", "png", "bmp"],
+    "command": {
+        "linux": "flatpak run com.retro_exo.okular",
+        "darwin": "open -a 'Preview'",
+        "win32": "start"
+    },
+    "includeFilename": true,
+    "includeArgs": false
+}
+```
+
+## macOS Recommended Applications
+
+For the best experience on macOS, consider installing these applications:
+
+| File Type | Default App | Recommended Alternative |
+|-----------|-------------|------------------------|
+| Video/Audio | QuickTime | [IINA](https://iina.io/) or [VLC](https://www.videolan.org/) |
+| Images/PDF | Preview | (Preview works great) |
+| Documents | TextEdit | [LibreOffice](https://www.libreoffice.org/) |
+| Web pages | Safari | (Safari works great) |
+| Windows EXE | - | [Wine](https://www.winehq.org/) via Homebrew |

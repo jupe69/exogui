@@ -1,38 +1,62 @@
 {
     "defaultMapping": {
         "extensions": [],
-        "command": "xdg-open",
+        "command": {
+            "win32": "start",
+            "linux": "xdg-open",
+            "darwin": "open"
+        },
         "includeFilename": true,
         "includeArgs": true
     },
     "commandsMapping": [
         {
             "extensions": ["avi", "flac", "mp3", "mp4", "wav"],
-            "command": "flatpak run com.retro_exo.mpv --force-window",
+            "command": {
+                "linux": "flatpak run com.retro_exo.mpv --force-window",
+                "darwin": "open -a 'IINA'",
+                "win32": "start"
+            },
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["bmp", "gif", "jfif", "pdf", "png"],
-            "command": "flatpak run com.retro_exo.okular",
+            "command": {
+                "linux": "flatpak run com.retro_exo.okular",
+                "darwin": "open -a 'Preview'",
+                "win32": "start"
+            },
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["cbr", "jpeg", "jpg"],
-            "command": "flatpak run com.retro_exo.mcomix",
+            "command": {
+                "linux": "flatpak run com.retro_exo.mcomix",
+                "darwin": "open -a 'Preview'",
+                "win32": "start"
+            },
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["doc", "docx", "rtf", "txt"],
-            "command": "flatpak run com.retro_exo.abiword",
+            "command": {
+                "linux": "flatpak run com.retro_exo.abiword",
+                "darwin": "open -a 'TextEdit'",
+                "win32": "start"
+            },
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["exe"],
-            "command": "flatpak run com.retro_exo.wine",
+            "command": {
+                "linux": "flatpak run com.retro_exo.wine",
+                "darwin": "wine",
+                "win32": "start"
+            },
             "includeFilename": true,
             "includeArgs": true
         },
@@ -44,13 +68,21 @@
         },
         {
             "extensions": ["htm", "html"],
-            "command": "flatpak run com.retro_exo.falkon -i",
+            "command": {
+                "linux": "flatpak run com.retro_exo.falkon -i",
+                "darwin": "open -a 'Safari'",
+                "win32": "start"
+            },
             "includeFilename": true,
             "includeArgs": false
         },
         {
             "extensions": ["xls", "xlsx", "ods"],
-            "command": "flatpak run com.retro_exo.gnumeric",
+            "command": {
+                "linux": "flatpak run com.retro_exo.gnumeric",
+                "darwin": "open -a 'Numbers'",
+                "win32": "start"
+            },
             "includeFilename": true,
             "includeArgs": false
         }

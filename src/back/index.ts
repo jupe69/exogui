@@ -57,6 +57,71 @@ import { SocketServer } from "./SocketServer";
 import { BackState } from "./types";
 import { difObjects } from "./util/misc";
 import { VlcPlayer } from "./VlcPlayer";
+import * as fs from "fs";
+
+/**
+ * Find VLC executable path based on the current platform.
+ * Returns the path if found, or undefined if VLC is not available.
+ */
+function findVlcPath(exodosPath: string): string | undefined {
+    const candidatePaths: string[] = [];
+
+    switch (process.platform) {
+        case "win32":
+            // Windows: Check bundled VLC first, then common install locations
+            candidatePaths.push(
+                path.join(exodosPath, "ThirdParty", "VLC", "x64", "vlc.exe"),
+                path.join(exodosPath, "ThirdParty", "VLC", "vlc.exe"),
+                "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe",
+                "C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe"
+            );
+            break;
+
+        case "darwin":
+            // macOS: Check bundled VLC, standard Applications, and Homebrew locations
+            candidatePaths.push(
+                // Bundled VLC (if eXoDOS provides one for macOS)
+                path.join(exodosPath, "ThirdParty", "VLC", "VLC.app", "Contents", "MacOS", "VLC"),
+                path.join(exodosPath, "ThirdParty", "VLC", "vlc"),
+                // Standard macOS installation
+                "/Applications/VLC.app/Contents/MacOS/VLC",
+                // Homebrew on Apple Silicon
+                "/opt/homebrew/bin/vlc",
+                // Homebrew on Intel
+                "/usr/local/bin/vlc"
+            );
+            break;
+
+        case "linux":
+            // Linux: Check bundled VLC, then common system locations
+            candidatePaths.push(
+                path.join(exodosPath, "ThirdParty", "VLC", "vlc"),
+                "/usr/bin/vlc",
+                "/usr/local/bin/vlc",
+                // Flatpak
+                "/var/lib/flatpak/exports/bin/org.videolan.VLC"
+            );
+            break;
+
+        default:
+            console.log(`VLC not supported on platform: ${process.platform}`);
+            return undefined;
+    }
+
+    // Find the first existing VLC path
+    for (const vlcPath of candidatePaths) {
+        try {
+            if (fs.existsSync(vlcPath)) {
+                return vlcPath;
+            }
+        } catch {
+            // Ignore errors and try next path
+        }
+    }
+
+    return undefined;
+}
+
 // Make sure the process.send function is available
 type Required<T> = T extends undefined ? never : T;
 const send: Required<typeof process.send> = process.send
@@ -192,16 +257,13 @@ async function initialize(message: any, _: any): Promise<void> {
 
     // Initialize VLC player
     try {
-        switch (process.platform) {
-            case "win32": {
-                state.vlcPlayer = new VlcPlayer(path.join(state.config.exodosPath, "ThirdParty", "VLC", "x64", "vlc.exe"), [],
-                    state.preferences.vlcPort, state.preferences.gameMusicVolume);
-                break;
-            }
-            default: {
-                console.log("Disabled VLC player (unsupported on this operating system)");
-                break;
-            }
+        const vlcPath = findVlcPath(state.config.exodosPath);
+        if (vlcPath) {
+            state.vlcPlayer = new VlcPlayer(vlcPath, [],
+                state.preferences.vlcPort, state.preferences.gameMusicVolume);
+            console.log(`VLC player initialized: ${vlcPath}`);
+        } else {
+            console.log("Disabled VLC player (VLC not found on this system)");
         }
     } catch (err) {
         log({
