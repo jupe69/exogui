@@ -40,6 +40,10 @@ export const isDev: boolean = (function () {
  * @param installed If the application is installed (instead of portable).
  */
 export function getMainFolderPath(): string {
+    // Allow override via EXODOS_PATH environment variable
+    if (process.env.EXODOS_PATH) {
+        return process.env.EXODOS_PATH;
+    }
     // For packaged apps (AppImage on Linux, .app on macOS), use userData directory
     // For portable/dev mode, use current working directory
     if (process.env.APPIMAGE || (process.platform === "darwin" && !isDev)) {

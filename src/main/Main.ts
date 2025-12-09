@@ -126,11 +126,13 @@ export function main(init: Init): void {
                     secret: state._secret,
                     isDev: Util.isDev,
                     exePath: path.dirname(app.getPath("exe")),
-                    basePath: process.env.APPIMAGE
-                        ? app.getAppPath()
-                        : (process.platform === "darwin" && !Util.isDev)
-                            ? path.dirname(path.dirname(path.dirname(path.dirname(app.getPath("exe")))))
-                            : process.cwd(),
+                    basePath: process.env.EXODOS_PATH
+                        ? process.env.EXODOS_PATH
+                        : process.env.APPIMAGE
+                            ? app.getAppPath()
+                            : (process.platform === "darwin" && !Util.isDev)
+                                ? path.dirname(path.dirname(path.dirname(path.dirname(app.getPath("exe")))))
+                                : process.cwd(),
                     acceptRemote: !!init.args["host-remote"],
                 };
                 state.backProc.send(JSON.stringify(msg));

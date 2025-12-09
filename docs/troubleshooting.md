@@ -120,6 +120,52 @@ For more details on configuration, see [config.md](config.md).
 
 ---
 
+### Wrong Data Path Being Used
+
+**Problem:** exogui looks for data files in the wrong directory (e.g., `/Games/Data/` instead of `/Games/eXoDOS/Data/`).
+
+**Solutions:**
+
+1. **Use the EXODOS_PATH environment variable:**
+
+    This overrides the automatic path detection. Set it to your eXoDOS folder:
+
+    ```bash
+    # macOS/Linux
+    export EXODOS_PATH="/path/to/eXoDOS"
+    npm run start
+
+    # Or in one line:
+    EXODOS_PATH="/path/to/eXoDOS" npm run start
+    ```
+
+2. **Use the start_exogui.command script (macOS):**
+
+    Copy `start_exogui.command` to your eXoDOS folder and double-click it. The script automatically sets EXODOS_PATH to its location.
+
+3. **Set absolute path in config.json:**
+
+    If exogui and eXoDOS are in separate folders, edit `config.json` in the exogui folder:
+
+    ```json
+    {
+        "exodosPath": "/absolute/path/to/eXoDOS/"
+    }
+    ```
+
+4. **Run from the eXoDOS folder:**
+
+    Navigate to the eXoDOS folder and run exogui from there:
+
+    ```bash
+    cd /path/to/eXoDOS
+    EXODOS_PATH="$(pwd)" npm --prefix /path/to/exogui run start
+    ```
+
+**Why this happens:** When running with `npm --prefix`, npm changes the working directory before launching Electron. The `EXODOS_PATH` environment variable ensures the correct path is used regardless of where npm runs from.
+
+---
+
 ### Images/Screenshots Not Displaying
 
 **Problem:** Game images and screenshots don't load.
