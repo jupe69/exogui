@@ -247,6 +247,24 @@ export namespace GameLauncher {
         }
         console.log(`[DEBUG] Install script found, launching...`);
 
+        // On macOS, the .bsh scripts source .msh files which may be in the shared util folder
+        // Copy the required .msh file to the game directory if it doesn't exist
+        if (process.platform === "darwin") {
+            const gameDirectory = path.dirname(gamePath);
+            const mshFile = path.join(gameDirectory, "install.msh");
+            const sharedMshFile = path.join(opts.fpPath, "eXo", "util", "install.msh");
+
+            if (!fs.existsSync(mshFile) && fs.existsSync(sharedMshFile)) {
+                console.log(`[DEBUG] Copying shared install.msh to game directory`);
+                try {
+                    fs.copyFileSync(sharedMshFile, mshFile);
+                    console.log(`[DEBUG] Copied ${sharedMshFile} to ${mshFile}`);
+                } catch (e) {
+                    console.log(`[DEBUG] Failed to copy install.msh: ${e}`);
+                }
+            }
+        }
+
         const gameArgs: string = opts.game.launchCommand;
         console.log(`[DEBUG] gameArgs: ${gameArgs}`);
 
