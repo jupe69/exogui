@@ -55,9 +55,27 @@ export const createCommand = (
         throw new Error(`No command mapping found for platform ${process.platform}`);
     }
 
+    // On macOS, shell scripts need to open in Terminal.app for user interaction
+    // Use osascript to open a new Terminal window and run the script there
+    if (process.platform === "darwin" && isShellScript(filename)) {
+        const scriptDir = path.dirname(filename);
+        const scriptName = path.basename(filename);
+        // Use osascript to open Terminal and run the script
+        // The script runs in its own directory for proper relative path handling
+        const terminalCommand = `cd '${scriptDir}' && bash '${scriptName}' ${args}`.replace(/'/g, "'\\''");
+        return {
+            command: `osascript -e 'tell application "Terminal" to do script "${terminalCommand}"' -e 'tell application "Terminal" to activate'`
+        };
+    }
+
     return {
         command: `${command} ${mapping.includeFilename ? escFilename : ""} ${mapping.includeArgs ? escArgs : ""}`.trim()
     };
+};
+
+const isShellScript = (filename: string): boolean => {
+    const ext = filename.split(".").pop()?.toLowerCase();
+    return ext === "sh" || ext === "bsh" || ext === "msh" || ext === "command";
 };
 
 const createSoundtrackCommand = (escFilename: string, args: string): Command => {
