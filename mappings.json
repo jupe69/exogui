@@ -61,8 +61,12 @@
             "includeArgs": true
         },
         {
-            "extensions": ["command"],
-            "command": "",
+            "extensions": ["command", "sh"],
+            "command": {
+                "linux": "bash",
+                "darwin": "bash",
+                "win32": ""
+            },
             "includeFilename": true,
             "includeArgs": true
         },
