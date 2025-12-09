@@ -179,10 +179,13 @@ export namespace GameLauncher {
      * @param game Game to launch
      */
     export async function launchGameSetup(opts: LaunchGameOpts): Promise<void> {
-        // Launch game
+        // Launch game setup/install script
+        // On Windows: install.bat
+        // On Linux/macOS: install.bsh (which sources install.msh on macOS)
+        const installScript = process.platform === "win32" ? "install.bat" : "install.bsh";
         const setupPath = opts.game.applicationPath.replace(
             getFilename(opts.game.applicationPath),
-            "install.command"
+            installScript
         );
         const gamePath: string = fixSlashes(
             path.join(
@@ -217,9 +220,10 @@ export namespace GameLauncher {
     ): string {
         const platform = process.platform;
 
-        // Bat files won't work on Wine, force a .sh file on non-Windows platforms instead. Sh File may not exist.
+        // Bat files won't work on Wine, force a .bsh file on non-Windows platforms instead.
+        // The .bsh files have built-in macOS detection that sources .msh files on darwin.
         if (platform !== "win32" && filePath.endsWith(".bat")) {
-            return filePath.substring(0, filePath.length - 4) + ".command";
+            return filePath.substring(0, filePath.length - 4) + ".bsh";
         }
 
         // Skip mapping if on Windows or Native application was not requested

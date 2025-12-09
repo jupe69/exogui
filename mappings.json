@@ -61,7 +61,7 @@
             "includeArgs": true
         },
         {
-            "extensions": ["command", "sh"],
+            "extensions": ["command", "sh", "bsh", "msh"],
             "command": {
                 "linux": "bash",
                 "darwin": "bash",
