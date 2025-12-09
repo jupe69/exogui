@@ -189,14 +189,21 @@ export namespace GameLauncher {
         const appPath = fixSlashes(opts.game.applicationPath);
         const gameDir = path.dirname(appPath);
         const fullGameDir = path.join(opts.fpPath, gameDir);
+        console.log(`[DEBUG] appPath: ${appPath}`);
+        console.log(`[DEBUG] gameDir: ${gameDir}`);
+        console.log(`[DEBUG] fullGameDir: ${fullGameDir}`);
+        console.log(`[DEBUG] fullGameDir exists: ${fs.existsSync(fullGameDir)}`);
 
         // Check if game folder exists
         if (!fs.existsSync(fullGameDir)) {
+            console.log(`[DEBUG] Game folder not found, trying ZIP extraction...`);
             log(logSource, `Game folder not found: ${fullGameDir}`);
 
             // Try to find and extract ZIP file (eXoDOS Lite)
             const extracted = await tryExtractGameZip(opts.fpPath, opts.game, opts.openDialog);
+            console.log(`[DEBUG] ZIP extraction result: ${extracted}`);
             if (!extracted) {
+                console.log(`[DEBUG] Showing 'Game Not Installed' dialog`);
                 opts.openDialog({
                     type: "info",
                     title: "Game Not Installed",
@@ -205,23 +212,30 @@ export namespace GameLauncher {
                 });
                 return;
             }
+        } else {
+            console.log(`[DEBUG] Game folder exists, proceeding to install script`);
         }
 
         // Launch game setup/install script if it exists
         const installScript = process.platform === "win32" ? "install.bat" : "install.bsh";
+        console.log(`[DEBUG] Looking for install script: ${installScript}`);
         const setupPath = opts.game.applicationPath.replace(
             getFilename(opts.game.applicationPath),
             installScript
         );
+        console.log(`[DEBUG] setupPath: ${setupPath}`);
         const gamePath: string = fixSlashes(
             path.join(
                 opts.fpPath,
                 getApplicationPath(setupPath, opts.execMappings, opts.native)
             )
         );
+        console.log(`[DEBUG] gamePath (install script): ${gamePath}`);
+        console.log(`[DEBUG] install script exists: ${fs.existsSync(gamePath)}`);
 
         // Check if install script exists
         if (!fs.existsSync(gamePath)) {
+            console.log(`[DEBUG] Install script not found, showing 'Game Extracted' dialog`);
             log(logSource, `Install script not found: ${gamePath}`);
             opts.openDialog({
                 type: "info",
@@ -231,6 +245,7 @@ export namespace GameLauncher {
             });
             return;
         }
+        console.log(`[DEBUG] Install script found, launching...`);
 
         const gameArgs: string = opts.game.launchCommand;
         const command = createCommand(
