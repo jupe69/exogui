@@ -248,18 +248,39 @@ export namespace GameLauncher {
         console.log(`[DEBUG] Install script found, launching...`);
 
         const gameArgs: string = opts.game.launchCommand;
-        const command = createCommand(
-            gamePath,
-            gameArgs,
-            opts.mappings
-        );
+        console.log(`[DEBUG] gameArgs: ${gameArgs}`);
 
+        let command;
+        try {
+            command = createCommand(
+                gamePath,
+                gameArgs,
+                opts.mappings
+            );
+            console.log(`[DEBUG] Command created: ${command.command}`);
+            console.log(`[DEBUG] Command cwd: ${command.cwd}`);
+        } catch (e) {
+            console.log(`[DEBUG] Error creating command: ${e}`);
+            return;
+        }
+
+        console.log(`[DEBUG] Executing command...`);
         const proc = exec(command.command, { cwd: command.cwd });
+        console.log(`[DEBUG] Process started with PID: ${proc.pid}`);
+
+        proc.on('error', (err) => {
+            console.log(`[DEBUG] Process error: ${err}`);
+        });
+
+        proc.on('exit', (code) => {
+            console.log(`[DEBUG] Process exited with code: ${code}`);
+        });
+
         logProcessOutput(proc);
         log(logSource, `Launch Game Setup "${opts.game.title}" (PID: ${proc.pid}) [\n` +
             `    applicationPath: "${opts.game.applicationPath}",\n` +
             `    launchCommand:   "${opts.game.launchCommand}",\n` +
-            `    command:         "${command}" ]`);
+            `    command:         "${command.command}" ]`);
     }
 
     /**
