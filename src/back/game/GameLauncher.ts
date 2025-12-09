@@ -10,8 +10,9 @@ import {
     padStart,
     stringifyArray,
 } from "@shared/Util";
-import { ChildProcess, exec } from "child_process";
+import { ChildProcess, exec, execSync } from "child_process";
 import { EventEmitter } from "events";
+import * as fs from "fs";
 import * as path from "path";
 
 export type LaunchAddAppOpts = LaunchBaseOpts & {
@@ -175,13 +176,35 @@ export namespace GameLauncher {
     }
 
     /**
-     * Launch a game
-     * @param game Game to launch
+     * Launch a game setup/install
+     * For eXoDOS Lite: Extract the game from ZIP if game folder doesn't exist
+     * For full eXoDOS: Run the install script
      */
     export async function launchGameSetup(opts: LaunchGameOpts): Promise<void> {
-        // Launch game setup/install script
-        // On Windows: install.bat
-        // On Linux/macOS: install.bsh (which sources install.msh on macOS)
+        // Get the game's directory path from applicationPath
+        // e.g., "eXo\eXoDOS\!dos\DOOM\DOOM.bat" -> "eXo/eXoDOS/!dos/DOOM"
+        const appPath = fixSlashes(opts.game.applicationPath);
+        const gameDir = path.dirname(appPath);
+        const fullGameDir = path.join(opts.fpPath, gameDir);
+
+        // Check if game folder exists
+        if (!fs.existsSync(fullGameDir)) {
+            log(logSource, `Game folder not found: ${fullGameDir}`);
+
+            // Try to find and extract ZIP file (eXoDOS Lite)
+            const extracted = await tryExtractGameZip(opts.fpPath, opts.game, opts.openDialog);
+            if (!extracted) {
+                opts.openDialog({
+                    type: "info",
+                    title: "Game Not Installed",
+                    message: `Could not find or extract the game "${opts.game.title}".\n\nFor eXoDOS Lite, make sure you have the game's ZIP file in the eXo/eXoDOS folder.`,
+                    buttons: ["Ok"],
+                });
+                return;
+            }
+        }
+
+        // Launch game setup/install script if it exists
         const installScript = process.platform === "win32" ? "install.bat" : "install.bsh";
         const setupPath = opts.game.applicationPath.replace(
             getFilename(opts.game.applicationPath),
@@ -193,6 +216,18 @@ export namespace GameLauncher {
                 getApplicationPath(setupPath, opts.execMappings, opts.native)
             )
         );
+
+        // Check if install script exists
+        if (!fs.existsSync(gamePath)) {
+            log(logSource, `Install script not found: ${gamePath}`);
+            opts.openDialog({
+                type: "info",
+                title: "Game Extracted",
+                message: `The game "${opts.game.title}" has been extracted and is ready to play!`,
+                buttons: ["Ok"],
+            });
+            return;
+        }
 
         const gameArgs: string = opts.game.launchCommand;
         const command = createCommand(
@@ -207,6 +242,119 @@ export namespace GameLauncher {
             `    applicationPath: "${opts.game.applicationPath}",\n` +
             `    launchCommand:   "${opts.game.launchCommand}",\n` +
             `    command:         "${command}" ]`);
+    }
+
+    /**
+     * Try to find and extract a game's ZIP file (for eXoDOS Lite)
+     * @returns true if extraction succeeded, false otherwise
+     */
+    async function tryExtractGameZip(
+        fpPath: string,
+        game: IGameInfo,
+        openDialog: ShowMessageBoxFunc
+    ): Promise<boolean> {
+        // Look for ZIP files in eXo/eXoDOS folder
+        const exodosFolder = path.join(fpPath, "eXo", "eXoDOS");
+
+        if (!fs.existsSync(exodosFolder)) {
+            log(logSource, `eXoDOS folder not found: ${exodosFolder}`);
+            return false;
+        }
+
+        // Try to find ZIP file matching the game title
+        const gameTitle = game.title;
+        const possibleZipNames = [
+            `${gameTitle}.zip`,
+            `${gameTitle.replace(/[/:*?"<>|]/g, "")}.zip`, // Remove invalid chars
+        ];
+
+        let zipPath: string | undefined;
+
+        // Search for the ZIP file
+        try {
+            const files = fs.readdirSync(exodosFolder);
+            for (const file of files) {
+                if (file.toLowerCase().endsWith(".zip")) {
+                    // Check if filename matches game title (case-insensitive)
+                    const baseName = file.slice(0, -4); // Remove .zip
+                    if (possibleZipNames.some(n => n.toLowerCase() === file.toLowerCase()) ||
+                        baseName.toLowerCase().includes(gameTitle.toLowerCase()) ||
+                        gameTitle.toLowerCase().includes(baseName.toLowerCase())) {
+                        zipPath = path.join(exodosFolder, file);
+                        break;
+                    }
+                }
+            }
+        } catch (e) {
+            log(logSource, `Error searching for ZIP: ${e}`);
+            return false;
+        }
+
+        if (!zipPath) {
+            log(logSource, `No ZIP file found for game: ${gameTitle}`);
+            return false;
+        }
+
+        log(logSource, `Found ZIP file: ${zipPath}`);
+
+        // Get 7za path
+        const sevenZaPath = get7zaPath(fpPath);
+        if (!sevenZaPath || !fs.existsSync(sevenZaPath)) {
+            log(logSource, `7za not found at: ${sevenZaPath}`);
+            return false;
+        }
+
+        // Extract the ZIP file
+        try {
+            log(logSource, `Extracting ${zipPath} to ${exodosFolder}`);
+            execSync(`"${sevenZaPath}" x -y -o"${exodosFolder}" "${zipPath}"`, {
+                stdio: "pipe",
+                timeout: 300000, // 5 minute timeout
+            });
+            log(logSource, `Extraction completed for ${gameTitle}`);
+            return true;
+        } catch (e) {
+            log(logSource, `Extraction failed: ${e}`);
+            return false;
+        }
+    }
+
+    /**
+     * Get the path to 7za executable
+     */
+    function get7zaPath(fpPath: string): string | undefined {
+        // Try to find 7za in extern folder (relative to exogui, not fpPath)
+        const possiblePaths: string[] = [];
+
+        switch (process.platform) {
+            case "darwin":
+                possiblePaths.push(
+                    path.join(process.cwd(), "extern", "7zip-bin", "mac", "7za"),
+                    "/usr/local/bin/7za",
+                    "/opt/homebrew/bin/7za"
+                );
+                break;
+            case "linux":
+                possiblePaths.push(
+                    path.join(process.cwd(), "extern", "7zip-bin", "linux", process.arch, "7za"),
+                    "/usr/bin/7za",
+                    "/usr/local/bin/7za"
+                );
+                break;
+            case "win32":
+                possiblePaths.push(
+                    path.join(process.cwd(), "extern", "7zip-bin", "win", process.arch, "7za.exe")
+                );
+                break;
+        }
+
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                return p;
+            }
+        }
+
+        return undefined;
     }
 
     /**
